@@ -576,7 +576,7 @@ async def make_bot(ctx, *, bot_description: str = None):
         # コマンド一覧を表示
         if commands_list:
             embed = discord.Embed(
-                title="�� 作成されたボットのコマンド一覧",
+                title="📚 作成されたボットのコマンド一覧",
                 description="このボットで使用できるコマンドです：",
                 color=0x00ff00
             )
