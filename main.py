@@ -380,7 +380,7 @@ async def handle_confirmation_stage(message, session, message_content):
                 
                 embed.add_field(
                     name="使用方法",
-                    value="zipファイルをダウンロードしbot_launcherにドラッグ&ドロップしてください。",
+                    value="zipファイルをダウンロードしbot_launcherにドラッグ&ドロップしてください。\nbot_launcherのダウンロードはこちら\nhttps://github.com/akiii2024/DiscordBotLauncher/releases/download/v0.1.0-alpha/BotLauncher.exe",
                     inline=False
                 )
                 
