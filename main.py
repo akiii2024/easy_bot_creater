@@ -141,6 +141,30 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 # インタラクティブモードの状態を管理する辞書
 interactive_sessions = {}
 
+def generate_bot_name(bot_type):
+    """ボットタイプに基づいてボット名を自動生成する"""
+    import random
+    
+    # ボットタイプに応じた名前の候補
+    name_templates = {
+        '機能型ボット': ['HelperBot', 'UtilityBot', 'ServiceBot', 'AssistantBot', 'HelperAI'],
+        '管理型ボット': ['ModBot', 'AdminBot', 'ManagerBot', 'ControlBot', 'GuardBot'],
+        '娯楽型ボット': ['GameBot', 'FunBot', 'EntertainmentBot', 'PlayBot', 'JoyBot'],
+        'その他のボット': ['CustomBot', 'SpecialBot', 'UniqueBot', 'MyBot', 'PersonalBot']
+    }
+    
+    # ボットタイプに応じた接尾辞
+    suffixes = ['Bot', 'AI', 'Assistant', 'Helper', 'Pro']
+    
+    # ボットタイプに応じた名前を選択
+    if bot_type in name_templates:
+        base_names = name_templates[bot_type]
+        return random.choice(base_names)
+    else:
+        # カスタムタイプの場合は汎用的な名前を生成
+        generic_names = ['SmartBot', 'CustomBot', 'HelperBot', 'AssistantBot', 'ServiceBot']
+        return random.choice(generic_names)
+
 def parse_gemini_response(response_text):
     """Gemini APIの応答からPythonコード、requirements、.env.exampleを抽出する"""
     # Pythonコードブロックを抽出
@@ -295,7 +319,7 @@ async def handle_interactive_response(message):
         current_stage = session['stage']
         
         # ステージの戻り順序を定義
-        stage_order = ['bot_type', 'bot_name', 'bot_features', 'bot_commands', 'confirmation']
+        stage_order = ['bot_type', 'bot_features', 'bot_commands', 'confirmation']
         
         try:
             current_index = stage_order.index(current_stage)
@@ -318,8 +342,6 @@ async def handle_interactive_response(message):
     # ステージに応じた処理
     if session['stage'] == 'bot_type':
         await handle_bot_type_stage(message, session, message_content)
-    elif session['stage'] == 'bot_name':
-        await handle_bot_name_stage(message, session, message_content)
     elif session['stage'] == 'bot_features':
         await handle_bot_features_stage(message, session, message_content)
     elif session['stage'] == 'bot_commands':
@@ -344,29 +366,14 @@ async def handle_bot_type_stage(message, session, message_content):
         # 自由記述の場合はそのまま使用
         session['bot_info']['type'] = message.content
     
-    session['stage'] = 'bot_name'
+    # ボット名を自動生成
+    session['bot_info']['name'] = generate_bot_name(session['bot_info']['type'])
     
-    embed = discord.Embed(
-        title="📝 ボットの名前を決めましょう",
-        description=f"ボットタイプ: **{session['bot_info']['type']}**\n\nボットの名前を教えてください。",
-        color=0x00ff00
-    )
-    embed.add_field(
-        name="例",
-        value="• WeatherBot\n• ModBot\n• GameBot\n• HelperBot",
-        inline=False
-    )
-    
-    await message.channel.send(embed=embed)
-
-async def handle_bot_name_stage(message, session, message_content):
-    """ボット名の入力ステージ"""
-    session['bot_info']['name'] = message.content
     session['stage'] = 'bot_features'
     
     embed = discord.Embed(
         title="⚙️ ボットの機能を詳しく教えてください",
-        description=f"ボット名: **{session['bot_info']['name']}**\n\nこのボットにどのような機能を持たせたいですか？",
+        description=f"ボットタイプ: **{session['bot_info']['type']}**\nボット名: **{session['bot_info']['name']}** (自動生成)\n\nこのボットにどのような機能を持たせたいですか？",
         color=0x00ff00
     )
     embed.add_field(
@@ -377,6 +384,8 @@ async def handle_bot_name_stage(message, session, message_content):
     
     await message.channel.send(embed=embed)
 
+
+
 async def handle_bot_features_stage(message, session, message_content):
     """ボット機能の詳細ステージ"""
     session['bot_info']['features'] = message.content
@@ -384,7 +393,7 @@ async def handle_bot_features_stage(message, session, message_content):
     
     embed = discord.Embed(
         title="🔧 コマンドについて",
-        description="ボットにどのようなコマンドを持たせたいですか？",
+        description=f"ボット名: **{session['bot_info']['name']}**\n機能: **{session['bot_info']['features']}**\n\nボットにどのようなコマンドを持たせたいですか？",
         color=0x00ff00
     )
     embed.add_field(
@@ -562,17 +571,7 @@ async def create_stage_embed(stage, session):
                 }
             ]
         },
-        'bot_name': {
-            'title': "📝 ボットの名前を決めましょう",
-            'description': f"ボットタイプ: **{session['bot_info'].get('type', '未設定')}**\n\nボットの名前を教えてください。",
-            'fields': [
-                {
-                    'name': "例",
-                    'value': "• WeatherBot\n• ModBot\n• GameBot\n• HelperBot",
-                    'inline': False
-                }
-            ]
-        },
+
         'bot_features': {
             'title': "⚙️ ボットの機能を設定しましょう",
             'description': f"ボット名: **{session['bot_info'].get('name', '未設定')}**\n\nボットにどのような機能を持たせたいですか？",
