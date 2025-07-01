@@ -38,7 +38,7 @@ https://discord.com/oauth2/authorize?client_id=1389097751022665758
 1. **zipファイルをダウンロード**: 生成が完了すると、ボットのファイルがzip形式で提供されます
 2. **BotLauncherをダウンロード**: [BotLauncher](https://github.com/akiii2024/DiscordBotLauncher/releases/latest/download/BotLauncher.exe)をダウンロード
 3. **ドラッグ&ドロップ**: zipファイルをBotLauncherにドラッグ&ドロップ
-4. **設定**: `.env.example`ファイルを参考に`.env`ファイルを作成し、Discord Bot Tokenを設定
+4. **設定**: Token入力欄にtokenを入力
 5. **起動**: BotLauncherでボットを起動
 
 ## 📋 生成されるファイル
