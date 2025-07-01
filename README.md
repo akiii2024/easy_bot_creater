@@ -1,76 +1,105 @@
 # Discord Bot Generator
 
-Gemini APIを使用してDiscordボットを自動生成するDiscordボットです。
+🤖 **AI駆動のDiscordボット自動生成サービス**
 
-## 機能
+このサービスは、あなたの要望に基づいてDiscordボットを自動生成し、すぐに使用できる形で提供します。
 
-- `!make` コマンドでボットの説明を入力して新しいDiscordボットを生成
-- インタラクティブモードで段階的にボットを作成
-- 生成されたボットはzipファイルでダウンロード可能
-- 必要なファイル（main.py、requirements.txt、.env.example）を自動生成
+## ✨ 主な機能
 
-## Renderでのデプロイ方法
+- **AI駆動**: Gemini APIを使用した高度なボット生成
+- **高速生成**: 数秒で完全なDiscordボットのコードを生成
+- **即座に使用可能**: 生成されたコードはすぐに実行可能
+- **カスタマイズ可能**: ユーザーの要望に合わせてボットをカスタマイズ
+- **インタラクティブモード**: 段階的な質問でボットを作成
 
-### 1. Renderアカウントの作成
-[Render](https://render.com)でアカウントを作成してください。
+## 🚀 使い方
 
-### 2. 新しいWebサービスを作成
-1. Renderダッシュボードで「New +」をクリック
-2. 「Web Service」を選択
-3. GitHubリポジトリを接続（このプロジェクトをGitHubにプッシュする必要があります）
+### 1. Discordサーバーに追加
+#### 下記のURLからBotを追加してください。
+https://discord.com/oauth2/authorize?client_id=1389097751022665758
+#### メッセージを送信、埋め込みリンク、ファイルを添付、メッセージ履歴を読む、アプリコマンドを使うの権限が必要です。
 
-### 3. 環境変数の設定
-Renderダッシュボードで以下の環境変数を設定してください：
 
-- `DISCORD_TOKEN`: Discordボットのトークン
-- `GEMINI_API_KEY`: Google Gemini APIのキー
+### 2. ボットの生成
 
-### 4. デプロイ設定
-- **Build Command**: `pip install -r requirements.txt`
-- **Start Command**: `python main.py`
-- **Environment**: Python 3.11
-
-### 5. デプロイ
-「Create Web Service」をクリックしてデプロイを開始します。
-
-## ローカルでの実行
-
-1. 依存関係をインストール：
-```bash
-pip install -r requirements.txt
-```
-
-2. `.env`ファイルを作成：
-```
-DISCORD_TOKEN=your_discord_token_here
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-3. ボットを起動：
-```bash
-python main.py
-```
-
-## 使用方法
-
-### 基本的な使用方法
+#### 方法1: 直接指定
 ```
 !make 天気予報を教えてくれるボット
 ```
 
-### インタラクティブモード
+#### 方法2: インタラクティブモード
 ```
 !make
 ```
-その後、画面の指示に従ってボットを作成します。
+その後、画面の指示に従って段階的にボットを作成します。
 
-## 必要なAPIキー
+### 3. 生成されたボットの使用
 
-1. **Discord Bot Token**: [Discord Developer Portal](https://discord.com/developers/applications)で取得
-2. **Gemini API Key**: [Google AI Studio](https://makersuite.google.com/app/apikey)で取得
+1. **zipファイルをダウンロード**: 生成が完了すると、ボットのファイルがzip形式で提供されます
+2. **BotLauncherをダウンロード**: [BotLauncher](https://github.com/akiii2024/DiscordBotLauncher/releases/latest/download/BotLauncher.exe)をダウンロード
+3. **ドラッグ&ドロップ**: zipファイルをBotLauncherにドラッグ&ドロップ
+4. **設定**: `.env.example`ファイルを参考に`.env`ファイルを作成し、Discord Bot Tokenを設定
+5. **起動**: BotLauncherでボットを起動
 
-## 注意事項
+## 📋 生成されるファイル
 
-- このボットは24時間稼働する必要があります
-- Renderの無料プランでは月間750時間の制限があります
-- 本格的な運用には有料プランの使用を推奨します 
+- **main.py**: ボットのメインコード
+- **requirements.txt**: 必要なPythonライブラリ
+- **.env.example**: 環境変数の設定例
+
+## 🎯 ボットの種類
+
+### 機能型ボット
+- 天気予報、翻訳、計算などの特定機能
+- 情報取得や変換サービス
+
+### 管理型ボット
+- サーバーモデレーション
+- ロール管理
+- ユーザー管理
+
+### 娯楽型ボット
+- ゲーム機能
+- エンターテイメント機能
+- インタラクティブな機能
+
+### その他のボット
+- カスタム機能
+- 特殊な用途
+
+## 🔧 コマンド一覧
+
+生成されたボットには以下のようなコマンドが含まれます：
+
+- `!commands` - ボットの全コマンド一覧を表示
+- `!help` - ヘルプを表示
+- その他、ボットの機能に応じたカスタムコマンド
+
+## 📝 使用例
+
+```
+!make サーバーのメンバー数を表示し、新規参加者に挨拶するボット
+
+!make 簡単な計算機能と天気予報機能を持つボット
+
+!make ミニゲームを提供する娯楽ボット
+```
+
+## ⚠️ 注意事項
+
+- 生成されたボットは個人利用を前提としています
+- Discord Bot Tokenは必ず安全に管理してください
+- 生成されたコードは参考用であり、必要に応じてカスタマイズしてください
+- 大量のリクエストは避けてください
+
+## 🆘 サポート
+
+問題が発生した場合や質問がある場合は、以下の方法でお問い合わせください：
+
+- **Discord**: aki_2024
+- **Twitter**: @aki_2024
+
+
+---
+
+*このREADMEファイルはAIによって生成されました*
