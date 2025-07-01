@@ -508,7 +508,7 @@ async def handle_confirmation_stage(message, session, message_content):
                 
                 embed.add_field(
                     name="使用方法",
-                    value="zipファイルをダウンロードしbot_launcherにドラッグ&ドロップしてください。\nbot_launcherのダウンロードはこちら\nhttps://github.com/akiii2024/DiscordBotLauncher/releases/download/v0.1.0-alpha/BotLauncher.exe",
+                    value="zipファイルをダウンロードしbot_launcherにドラッグ&ドロップしてください。\nbot_launcherのダウンロードはこちら\nhttps://github.com/akiii2024/DiscordBotLauncher/releases/latest/download/BotLauncher.exe",
                     inline=False
                 )
                 
@@ -719,7 +719,7 @@ async def make_bot(ctx, *, bot_description: str = None):
             
             embed.add_field(
                 name="使用方法",
-                value="1. ダウンロードしたzipファイルを解凍\n2. `.env.example`を`.env`にリネームしてトークンを設定\n3. `pip install -r requirements.txt`で依存関係をインストール\n4. `python main.py`でボットを起動",
+                value="zipファイルをダウンロードしbot_launcherにドラッグ&ドロップしてください。\nbot_launcherのダウンロードはこちら\nhttps://github.com/akiii2024/DiscordBotLauncher/releases/latest/download/BotLauncher.exe",
                 inline=False
             )
             
