@@ -6,9 +6,128 @@ import zipfile
 import asyncio
 import google.generativeai as genai
 import re
+from flask import Flask, render_template_string
+import threading
+import time
 
 # .envファイルを最初に読み込む
 load_dotenv()
+
+# Flaskアプリケーションを作成
+app = Flask(__name__)
+
+# シンプルなHTMLテンプレート
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.2);
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 255, 0, 0.3);
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .feature h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Discord Bot Generator</h1>
+        
+        <div class="status">
+            <h2>✅ サーバーが正常に動作しています</h2>
+            <p>Discordボットジェネレーターが稼働中です</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <h3>🎯 AI駆動</h3>
+                <p>Gemini APIを使用して高度なボットを自動生成</p>
+            </div>
+            <div class="feature">
+                <h3>⚡ 高速生成</h3>
+                <p>数秒で完全なDiscordボットのコードを生成</p>
+            </div>
+            <div class="feature">
+                <h3>📦 即座に使用可能</h3>
+                <p>生成されたコードはすぐに実行可能</p>
+            </div>
+            <div class="feature">
+                <h3>🔧 カスタマイズ可能</h3>
+                <p>ユーザーの要望に合わせてボットをカスタマイズ</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>このサービスはDiscordボットの生成を支援します</p>
+            <p>Discordサーバーで <code>!make</code> コマンドを使用してボットを生成してください</p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+@app.route('/')
+def home():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/health')
+def health():
+    return {'status': 'healthy', 'service': 'discord-bot-generator'}
+
+def run_flask():
+    """Flaskサーバーを起動する関数"""
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
 
 # --- Gemini API ---
 # .envファイルからAPIキーを読み込む
@@ -622,4 +741,18 @@ async def make_bot_error(ctx, error):
         await ctx.send(f"エラーが発生しました: {error}")
 
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+def run_discord_bot():
+    """Discordボットを起動する関数"""
+    bot.run(os.getenv("DISCORD_TOKEN"))
+
+
+if __name__ == "__main__":
+    # Flaskサーバーを別スレッドで起動
+    flask_thread = threading.Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    
+    # 少し待ってからDiscordボットを起動
+    time.sleep(2)
+    
+    # Discordボットをメインスレッドで起動
+    run_discord_bot()
