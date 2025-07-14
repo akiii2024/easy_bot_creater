@@ -6,6 +6,8 @@ import zipfile
 import asyncio
 import google.generativeai as genai
 import re
+import time
+import shutil
 
 # .envファイルを最初に読み込む
 load_dotenv()
@@ -21,6 +23,51 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 
 # インタラクティブモードの状態を管理する辞書
 interactive_sessions = {}
+
+# レート制限対策用の最後のメッセージ送信時間
+last_message_times = {}
+
+async def safe_send_message(channel, content=None, embed=None, file=None):
+    """レート制限を考慮したメッセージ送信"""
+    channel_id = channel.id
+    current_time = time.time()
+    
+    # 前回のメッセージから最低1秒の間隔を空ける
+    if channel_id in last_message_times:
+        time_diff = current_time - last_message_times[channel_id]
+        if time_diff < 1.0:
+            await asyncio.sleep(1.0 - time_diff)
+    
+    try:
+        if file:
+            message = await channel.send(content=content, embed=embed, file=file)
+        else:
+            message = await channel.send(content=content, embed=embed)
+        
+        last_message_times[channel_id] = time.time()
+        return message
+    except discord.HTTPException as e:
+        if e.status == 429:  # Too Many Requests
+            print(f"Rate limit hit on channel {channel_id}, waiting...")
+            await asyncio.sleep(5)  # 5秒待機
+            # 再試行
+            return await channel.send(content=content, embed=embed, file=file)
+        else:
+            raise e
+
+def cleanup_temp_files(temp_dir, zip_filename=None):
+    """一時ファイルを安全にクリーンアップ"""
+    try:
+        if zip_filename and os.path.exists(zip_filename):
+            os.remove(zip_filename)
+    except Exception as e:
+        print(f"Zipファイルの削除に失敗: {e}")
+    
+    try:
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+    except Exception as e:
+        print(f"一時ディレクトリの削除に失敗: {e}")
 
 def generate_bot_name(bot_type):
     """ボットタイプに基づいてボット名を自動生成する"""
@@ -94,7 +141,7 @@ def extract_commands_from_code(python_code):
 
 async def generate_bot_with_gemini(channel, author, bot_description):
     """Gemini APIを使用してDiscordボットのコードを生成する"""
-    await channel.send(f"「{bot_description}」ですね。承知いたしました。Gemini APIに問い合わせて、ボットのコードを生成します...")
+    await safe_send_message(channel, f"「{bot_description}」ですね。承知いたしました。Gemini APIに問い合わせて、ボットのコードを生成します...")
 
     prompt = f"""
 あなたは優秀なDiscordボット開発アシスタントです。
@@ -139,13 +186,13 @@ async def generate_bot_with_gemini(channel, author, bot_description):
         main_py_content, requirements_content, env_example_content, commands_list = parse_gemini_response(response.text)
 
         if not main_py_content:
-            await channel.send("エラー: Gemini APIから有効なPythonコードを取得できませんでした。")
+            await safe_send_message(channel, "エラー: Gemini APIから有効なPythonコードを取得できませんでした。")
             return None, None, None, None
 
         return main_py_content, requirements_content, env_example_content, commands_list
 
     except Exception as e:
-        await channel.send(f"Gemini APIとの通信中にエラーが発生しました: {e}")
+        await safe_send_message(channel, f"Gemini APIとの通信中にエラーが発生しました: {e}")
         return None, None, None, None
 
 async def start_interactive_session(ctx):
@@ -178,7 +225,7 @@ async def start_interactive_session(ctx):
         inline=False
     )
     
-    await ctx.send(embed=embed)
+    await safe_send_message(ctx.channel, embed=embed)
 
 async def handle_interactive_response(message):
     """インタラクティブモードでのユーザー応答を処理する"""
@@ -193,7 +240,7 @@ async def handle_interactive_response(message):
     # キャンセル処理
     if message_content == 'cancel':
         del interactive_sessions[user_id]
-        await message.channel.send("❌ ボット作成をキャンセルしました。")
+        await safe_send_message(message.channel, "❌ ボット作成をキャンセルしました。")
         return True
     
     if message_content == 'back':
@@ -211,12 +258,12 @@ async def handle_interactive_response(message):
                 
                 # 各ステージのembedを生成する関数を呼び出し
                 embed = await create_stage_embed(previous_stage, session)
-                await message.channel.send(embed=embed)
+                await safe_send_message(message.channel, embed=embed)
             else:
                 # 最初のステージの場合は戻れない
-                await message.channel.send("⚠️ これ以上戻ることはできません。")
+                await safe_send_message(message.channel, "⚠️ これ以上戻ることはできません。")
         except ValueError:
-            await message.channel.send("⚠️ 無効なステージです。")
+            await safe_send_message(message.channel, "⚠️ 無効なステージです。")
         
         return True
     
@@ -263,7 +310,7 @@ async def handle_bot_type_stage(message, session, message_content):
         inline=False
     )
     
-    await message.channel.send(embed=embed)
+    await safe_send_message(message.channel, embed=embed)
 
 
 
@@ -288,7 +335,7 @@ async def handle_bot_features_stage(message, session, message_content):
         inline=False
     )
     
-    await message.channel.send(embed=embed)
+    await safe_send_message(message.channel, embed=embed)
 
 async def handle_bot_commands_stage(message, session, message_content):
     """コマンド設定ステージ"""
@@ -314,7 +361,7 @@ async def handle_bot_commands_stage(message, session, message_content):
         inline=False
     )
     
-    await message.channel.send(embed=embed)
+    await safe_send_message(message.channel, embed=embed)
 
 async def handle_confirmation_stage(message, session, message_content):
     """確認ステージ"""
@@ -327,7 +374,7 @@ async def handle_confirmation_stage(message, session, message_content):
 コマンド: {session['bot_info']['commands']}
 """
         
-        await message.channel.send("🚀 ボットの作成を開始します...")
+        await safe_send_message(message.channel, "🚀 ボットの作成を開始します...")
         
         # 既存のgenerate_bot_with_gemini関数を使用
         main_py, requirements_txt, env_example, commands_list = await generate_bot_with_gemini(message.channel, message.author, bot_description)
@@ -359,7 +406,7 @@ async def handle_confirmation_stage(message, session, message_content):
                 zipf.write(env_example_path, arcname=".env.example")
 
             # zipファイルを送信
-            await message.channel.send("✅ 新しいボットの準備ができました！", file=discord.File(zip_filename))
+            await safe_send_message(message.channel, "✅ 新しいボットの準備ができました！", file=discord.File(zip_filename))
 
             # コマンド一覧を表示
             if commands_list:
@@ -393,14 +440,10 @@ async def handle_confirmation_stage(message, session, message_content):
                     inline=False
                 )
                 
-                await message.channel.send(embed=embed)
+                await safe_send_message(message.channel, embed=embed)
 
             # 一時ファイルをクリーンアップ
-            os.remove(zip_filename)
-            os.remove(main_py_path)
-            os.remove(requirements_path)
-            os.remove(env_example_path)
-            os.rmdir(temp_dir)
+            cleanup_temp_files(temp_dir, zip_filename)
         
         # セッションを終了
         del interactive_sessions[message.author.id]
@@ -424,11 +467,11 @@ async def handle_confirmation_stage(message, session, message_content):
             inline=False
         )
         
-        await message.channel.send(embed=embed)
+        await safe_send_message(message.channel, embed=embed)
         
     elif message_content == 'cancel':
         del interactive_sessions[message.author.id]
-        await message.channel.send("❌ ボット作成をキャンセルしました。")
+        await safe_send_message(message.channel, "❌ ボット作成をキャンセルしました。")
 
 async def create_stage_embed(stage, session):
     """ステージに応じたembedを作成する"""
@@ -531,7 +574,7 @@ async def on_message(message):
 
 @bot.command()
 async def ping(ctx):
-    await ctx.send("pong")
+    await safe_send_message(ctx.channel, "pong")
 
 @bot.command(name="make")
 async def make_bot(ctx, *, bot_description: str = None):
@@ -570,7 +613,7 @@ async def make_bot(ctx, *, bot_description: str = None):
             zipf.write(env_example_path, arcname=".env.example")
 
         # zipファイルを送信
-        await ctx.send("新しいボットの準備ができました！", file=discord.File(zip_filename))
+        await safe_send_message(ctx.channel, "新しいボットの準備ができました！", file=discord.File(zip_filename))
 
         # コマンド一覧を表示
         if commands_list:
@@ -604,21 +647,17 @@ async def make_bot(ctx, *, bot_description: str = None):
                 inline=False
             )
             
-            await ctx.send(embed=embed)
+            await safe_send_message(ctx.channel, embed=embed)
 
         # 一時ファイルをクリーンアップ
-        os.remove(zip_filename)
-        os.remove(main_py_path)
-        os.remove(requirements_path)
-        os.remove(env_example_path)
-        os.rmdir(temp_dir)
+        cleanup_temp_files(temp_dir, zip_filename)
 
 @make_bot.error
 async def make_bot_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("`!make`コマンドの使い方が正しくありません。\n**例:** `!make 天気予報を教えてくれるボット`")
+        await safe_send_message(ctx.channel, "`!make`コマンドの使い方が正しくありません。\n**例:** `!make 天気予報を教えてくれるボット`")
     else:
-        await ctx.send(f"エラーが発生しました: {error}")
+        await safe_send_message(ctx.channel, f"エラーが発生しました: {error}")
 
 
 def run_discord_bot():
